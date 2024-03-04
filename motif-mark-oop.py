@@ -15,9 +15,10 @@ args=get_args()
 fasta_file= args.fastafilename
 motif=args.motiffilename
 
+fasta = {}
+
 def oneline_fasta(filename: str) -> dict:
     '''Reads a fasta file and returns a dictionary with header as keys and sequences as values'''
-    fasta = {}
 
     with open(fasta_file, "r") as fh:
         header = None
@@ -45,20 +46,27 @@ class Gene:
         self.name = the_name
         self.header = the_header
         # You can initialize other attributes here
+    def get_gene(self):
+        return self.name
 
 class Sequence:
-    def __init__(self, the_name, the_sequence):
+    def __init__(self, the_name, the_sequence, the_length, the_motif):
         # Initialize instance attributes
         self.name = the_name
         self.sequence = the_sequence
+        self.length = the_length
+        self.motif = the_motif
         # You can initialize other attributes here
+    def get_lenseq(self):
+        return self.length
+    
+    def get_motif(self):
+        return self.motif
+    
+    for key, value in fasta.items():# parse through the value and 
+        matches = re.finditer(motif, value, re.IGNORECASE)
 
-class MOTIF:
-    def __init__(self, motif_file):
-        # Initialize instance attributes
-        self.motif_file = motif_file
-        # You can initialize other attributes here
-
+    
 class Drawing:
     def __init__(self, width= 2000.6, height = 200):
         self.width = width
