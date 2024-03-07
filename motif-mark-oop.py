@@ -158,4 +158,84 @@ with cairo.SVGSurface("genes.svg", 500, 100) as surface:
     g2.draw(context)
 
     surface.write_to_png('gene3.png')
+    
+def identify_exons(sequence: str) -> list:
+    exon_positions = [] # tuple that stores the start and end of exons
+    exon_start = None
+    # we need to loop over each character in the string to check for exons(capital bases)
+    for i, base in enumerate(sequence):
+        if base.isupper():
+            if exon_start is None:
+                exon_start = i # sets the start pos as the counter index i
+        elif exon_start is not None: # at the end of the exon , append to list
+            exon_positions.append((exon_start / len(sequence), i / len(sequence)))  # Normalize positions in refrance to the length of the sequence 
+            exon_start = None # set back to 0
+    if exon_start is not None: # continue to loop
+        exon_positions.append((exon_start / len(sequence), len(sequence) / len(sequence)))  # Normalize positions
+    return exon_positions
 
+class Exon:
+    def __init__(self, sequence: str):
+        self.sequence = sequence
+        self.exons = self.identify_exons(sequence)
+
+    def draw_exon_positions(context, exon_positions, gene_number, sequence_length, gene_name):
+        # Draw vertical line for the length of the sequence
+        context.move_to(0, gene_number * 100 + 50)
+        context.line_to(sequence_length, gene_number * 100 + 50)
+        context.set_source_rgb(0, 0, 0)  # Black color
+        context.set_line_width(2)
+        context.stroke()
+
+        # Set color and line width for drawing exon positions
+        context.set_source_rgb(1, 0, 0)  # Red color
+        context.set_line_width(6)  # Increased line width for better visualization
+
+        # Calculate y position for drawing exon positions
+        y_position = gene_number * 100 + 50  # Adjust as needed
+
+        # Draw vertical lines for exon positions
+        # parses through the tuple created 
+        for start, end in exon_positions:
+            # to find the exact position of the exon in refrance to the total length of the seq
+            start_x = start * sequence_length
+            end_x = end * sequence_length
+            # draw the exons
+            context.move_to(start_x, y_position)  
+            context.line_to(end_x, y_position)  
+            context.stroke()
+
+        # Annotate the figure with gene names
+        context.set_source_rgb(0, 0, 0)  # Black color
+        context.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+        context.set_font_size(15)
+        context.move_to(10, gene_number * 100 + 25)  # Adjust position for gene name
+        context.show_text(gene_name)
+
+    # Example usage:
+    fasta_dict = {
+        "Gene1": "atgCAGTcGACGAaaaaTCaaaTCG",
+        "Gene2": "atCGaaaGATCGaaaaaaTCGATCG",
+        "Gene3": "atCGaaaaGACGTACGTaaaaaTCG",
+    }
+
+    # Define image width
+    WIDTH = 800
+
+    # Create ImageSurface for PNG
+    with cairo.ImageSurface(cairo.FORMAT_ARGB32, WIDTH, 100 * len(fasta_dict)) as surface:
+        context = cairo.Context(surface)
+        context.set_source_rgb(1, 1, 1)  # White background
+        context.paint()
+
+        # Iterate through the fasta_dict and draw exon positions for each sequence
+        for i, (gene_name, sequence) in enumerate(fasta_dict.items()):
+             #gene_name = header.split()[0]
+             exon_positions = identify_exons(sequence)
+             sequence_length = len(sequence) * 10  # Scale factor for length of sequence
+             draw_exon_positions(context, exon_positions, i, sequence_length, gene_name)
+
+        # Save the drawing to a PNG file
+        surface.write_to_png('exon_positions.png')
+
+    print("Exon positions saved as exon_positions.png")
