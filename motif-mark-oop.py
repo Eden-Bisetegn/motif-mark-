@@ -98,47 +98,45 @@ with open ("Fig_1_motifs.txt", "r") as file:
         my_motif= motif.strip().upper()
         #setting motif- ygcy set as key of motifs dictionary
         motifs[my_motif]= motif_to_regex(my_motif)
-
-        print(motifs)
-
-#with open("test.fa", "r") as fh2:
-    #seq- aaaactcgaaa
-# for sequence in fasta.items(): 
-#     matches = re.finditer( motif_to_regex("catag"), sequence, re.IGNORECASE)
-#     for match in matches:
-#         print("-----")
-#         print(match)
-#         #print(type(match))
-#         #print(dir(match))
-#         # print(match.start())
-#         # print(match.end())
-#         print(match.span())
         
-def build_motifs(sequence: str) -> str:
-    motif_d = Motif(my_motif, match.start, len(match) )
-    for sequence in fasta_dict.items(): 
-        matches = re.finditer( motif_to_regex(sequence), sequence, re.IGNORECASE)
-        
+def build_motifs(sequence: str, motifs: dict) -> Motif:
+    found_motifs = []
+    for motif, regex_pattern in motifs.items():
+        matches = re.finditer(regex_pattern, sequence, re.IGNORECASE)
         for match in matches:
-            return matches, match.start
+            motif_instance = Motif(motif, match.start(), len(sequence))
+            found_motifs.append(motif_instance)
+    return found_motifs
 
 class Motif:
-    def __init__(self, the_type: str, the_start: int, the_length: int):
+    def __init__(self, the_type: str, the_start: int, the_length: int, the_number: int = None):
         # Initialize instance attributes
         self.type = the_type
         self.start = the_start
         self.length = the_length
+        self.number = the_number
 
-    def draw(self, context):
+    def __repr__(self) -> str:
+        return f"Motif({self.type}, {self.start}, {self.length})"
+
+    def motif_draw(self, context):
         # Set color and line width for drawing gene
+        #color = self.get_color()
         context.set_source_rgb(0, 0, 0)  # Black color
         context.set_line_width(5)
-        context.move_to(0, self.start * MARGIN_X)
-        context.line_to(self.length, self.start * MARGIN_X)
+        context.move_to(0, self.start * 100 + 50)
+        context.line_to(self.length, self.start * 100 + 50)
         context.stroke()
-
-        # Draw diffrent color motif matches  # maybe hard code the 4 types of motifs 
-        
+    def get_color(self) -> tuple:
+            # Define a dictionary mapping motif types to RGB color values
+            color_map = {
+                "ygcy": (1, 0, 0),  # Red
+                "GCAUG": (0, 1, 0),  # Green
+                "catag": (0, 0, 1),  # Blue
+                "YYYYYYYYYY": (1, 1, 0),  # Yellow
+            }
+            # If the motif type is in the color map, return its color; otherwise, return black
+            return color_map.get(self.type, (0, 0, 0)) 
 
 """
 dictionary with a key - motifs in file ex- 'YgcY' 
@@ -198,6 +196,8 @@ class Exon:
         self.start = the_start
         self.stop = the_stop
         self.gene_number = the_gene_number
+    def __repr__(self) -> str:
+        return f"Exon({self.start}, {self.stop})"
 
     #def draw_exon_positions(context, exon_positions, gene_number, sequence_length, gene_name):
     def draw_exon(self, context):
@@ -223,120 +223,20 @@ with cairo.ImageSurface(cairo.FORMAT_ARGB32, WIDTH, 100 * len(fasta_dict)) as su
 
     # Iterate through the fasta_dict and draw exon positions for each     
     for gene_number, (gene_name, sequence) in enumerate(fasta_dict.items()):
-            
             #draw motiffs
-            #motif_d = build_motifs()
-
+            motif_list = build_motifs(sequence, motifs)
+            for motif_instance in motif_list:
+                print(motif_instance)
+                motif_instance.motif_draw(context)
             #draw build gene
             gene = build_gene(gene_name, sequence, gene_number)
             gene.gene_draw(context)
             #draw build exon
             exons= build_exons(sequence, gene_number)
             for exon in exons:
+                print(exon)
                 exon.draw_exon(context)
+
 
     # Save the drawing to a PNG file
     surface.write_to_png('exon_positions.png')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# class Exon:
-#     def __init__(self, sequence: str):
-#         self.sequence = sequence
-#         self.exons = self.identify_exons(sequence)
-
-#     def draw_exon_positions(context, exon_positions, gene_number, sequence_length, gene_name):
-#         # Draw vertical line for the length of the sequence
-#         context.move_to(0, gene_number * 100 + 50)
-#         context.line_to(sequence_length, gene_number * 100 + 50)
-#         context.set_source_rgb(0, 0, 0)  # Black color
-#         context.set_line_width(2)
-#         context.stroke()
-
-#         # Set color and line width for drawing exon positions
-#         context.set_source_rgb(1, 0, 0)  # Red color
-#         context.set_line_width(6)  # Increased line width for better visualization
-
-#         # Calculate y position for drawing exon positions
-#         y_position = gene_number * 100 + 50  # Adjust as needed
-
-#         # Draw vertical lines for exon positions
-#         # parses through the tuple created 
-#         for start, end in exon_positions:
-#             # to find the exact position of the exon in refrance to the total length of the seq
-#             start_x = start * sequence_length
-#             end_x = end * sequence_length
-#             # draw the exons
-#             context.move_to(start_x, y_position)  
-#             context.line_to(end_x, y_position)  
-#             context.stroke()
-
-#         # Annotate the figure with gene names
-#         context.set_source_rgb(0, 0, 0)  # Black color
-#         context.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-#         context.set_font_size(15)
-#         context.move_to(10, gene_number * 100 + 25)  # Adjust position for gene name
-#         context.show_text(gene_name)
-
-#     # Example usage:
-#     fasta_dict = {
-#         "Gene1": "atgCAGTcGACGAaaaaTCaaaTCGaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-#         "Gene2": "atCGaaaGATCGaaaaaaTCGATCG",
-#         "Gene3": "atCGaaaaGACGTACGTaaaaaTCG",
-#     }
-
-#     # Define image width
-#     WIDTH = 800
-#     fasta_dict= oneline_fasta(fasta_file)
-#     # Create ImageSurface for PNG
-#     with cairo.ImageSurface(cairo.FORMAT_ARGB32, WIDTH, 100 * len(fasta_dict)) as surface:
-#         context = cairo.Context(surface)
-#         context.set_source_rgb(1, 1, 1)  # White background
-#         context.paint()
-
-#         # Iterate through the fasta_dict and draw exon positions for each 
-     
-#         for i, (gene_name, sequence) in enumerate(fasta_dict.items()):
-             
-#              #gene_name = header.split()[0]
-
-#              exon_positions = identify_exons(sequence)
-#              sequence_length = len(sequence) * 10  # Scale factor for length of sequence
-
-#              print(f"debug 8235 {exon_positions=}")
-#              draw_exon_positions(context, exon_positions, i, sequence_length, gene_name)
-
-#         # Save the drawing to a PNG file
-#         surface.write_to_png('exon_positions.png')
-
-#     print("Exon positions saved as exon_positions.png")
-
