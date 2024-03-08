@@ -98,8 +98,6 @@ def motif_to_regex(motif: str) -> str:
             motif_regex += "[CTGAU]"
     return motif_regex
 
-#print(motif_to_regex("ycgy"))
-
 #key - a motif from the file : ygcy
 #value - regex representation of motif: [CT]gc[CT]
 motifs: dict[str, str] = {}
@@ -107,16 +105,6 @@ motifs: dict[str, str] = {}
 # key - a motif from the file : ygcy
 #value - assigned color :  (1, 0, 0)
 MOTIF_COLOR_MAP : dict[str, tuple[float, float, float]] = {}
-
-# with open ("Fig_1_motifs.txt", "r") as file:
-#     i=0
-#     for motif in file:
-#         my_motif= motif.strip().upper()
-#         #setting motif- ygcy set as key of motifs dictionary
-#         motifs[my_motif]= motif_to_regex(my_motif)
-#         # set color to motifs
-#         motif_color_map[my_motif]=COLOR_LIST[i]
-#         i+=1
 
 with open ("Fig_1_motifs.txt", "r") as file:
     for i, motif in enumerate(file):
@@ -127,13 +115,6 @@ with open ("Fig_1_motifs.txt", "r") as file:
         MOTIF_COLOR_MAP[my_motif]=COLOR_LIST[i]
 print(MOTIF_COLOR_MAP)
 
-# def build_motifs(sequence: str) -> Motif:
-#     motif_d = Motif(my_motif, match.start(), match.stop() )
-#     for sequence in fasta_dict.items(): 
-#         matches = re.finditer( motif_to_regex(sequence), sequence, re.IGNORECASE)
-        
-#         for match in matches:
-#             return matches, match.start
         
 def build_motifs(sequence: str, motifs: dict, gene_number: int) -> Motif:
     found_motifs = []
@@ -162,9 +143,10 @@ class Motif:
 
     def motif_draw(self, context):
         # Set color and line width for drawing gene
-        #color = self.get_color()
-        print(f'debug 345 {self.start}')
-        context.set_source_rgb(0, 0, 0)  # Black color
+        #print(f"Motif to draw: {my_motif}") 
+        motif_color = MOTIF_COLOR_MAP.get(self.type)  
+        context.set_source_rgb(*motif_color) 
+        #print(f"Color for motif: {motif_color}") 
         context.set_line_width(30)
         context.move_to(self.start, self.gene_number * 100 + 50)
         context.line_to(self.end, self.gene_number * 100 + 50)
@@ -174,16 +156,9 @@ class Motif:
         # context.line_to(280, )
         context.stroke()
 
-    def get_color(self) -> tuple:
-            # Define a dictionary mapping motif types to RGB color values
-            color_map = {
-                "ygcy": (1, 0, 0),  # Red
-                "GCAUG": (0, 1, 0),  # Green
-                "catag": (0, 0, 1),  # Blue
-                "YYYYYYYYYY": (1, 1, 0),  # Yellow
-            }
-            # If the motif type is in the color map, return its color; otherwise, return black
-            return color_map.get(self.type, (0, 0, 0)) 
+    # Print legend information
+        #print(f"Legend: {self.type} - {motif_color}")
+
 
 """
 dictionary with a key - motifs in file ex- 'YgcY' 
@@ -216,7 +191,7 @@ class Gene:
         context.line_to(self.length, self.number * 100 + 50)
         context.stroke()
         # Draw gene label
-        context.move_to(0, self.number * 100 + 40)
+        context.move_to(0, self.number * 100 + 30)
         context.show_text(self.name)
 
 def build_exons(sequence: str, gene_number: int) -> list[Exon]:
